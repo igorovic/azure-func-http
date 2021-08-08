@@ -3,29 +3,28 @@ import { HttpServer, INestApplication } from '@nestjs/common';
 import { createHandlerAdapter } from './adapter/azure-adapter';
 import { AzureHttpRouter } from './router';
 
-let handler: Function;
-
 export class AzureHttpAdapterStatic {
+  handler: Function;
   handle(
     createApp: () => Promise<INestApplication>,
     context: Context,
     req: HttpRequest
   ) {
-    if (handler) {
-      return handler(context, req);
+    if (this.handler) {
+      return this.handler(context, req);
     }
-    this.createHandler(createApp).then(fn => fn(context, req));
+    this.createHandler(createApp).then((fn) => fn(context, req));
   }
 
   private async createHandler(createApp: () => Promise<INestApplication>) {
     const app = await createApp();
     const adapter = app.getHttpAdapter();
     if (this.hasGetTypeMethod(adapter) && adapter.getType() === 'azure-http') {
-      return ((adapter as any) as AzureHttpRouter).handle.bind(adapter);
+      return (adapter as any as AzureHttpRouter).handle.bind(adapter);
     }
     const instance = app.getHttpAdapter().getInstance();
-    handler = createHandlerAdapter(instance);
-    return handler;
+    this.handler = createHandlerAdapter(instance);
+    return this.handler;
   }
 
   private hasGetTypeMethod(
